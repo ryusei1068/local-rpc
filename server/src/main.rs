@@ -34,6 +34,11 @@ fn char_counts(s: &String) -> HashMap<char, u32> {
     map
 }
 
+fn sort(mut s: Vec<String>) -> Vec<String> {
+    s.sort();
+    s
+}
+
 async fn run() -> std::io::Result<()> {
     let socket_path = "/socket_file";
 
@@ -95,4 +100,10 @@ fn test_valid_anagram() {
         true,
         valid_anagram("anagram".to_string(), "nagaram".to_string())
     );
+}
+
+#[test]
+fn test_sort() {
+    let s = vec!["world".to_string(), "hello".to_string()];
+    assert_eq!(vec!["hello".to_string(), "world".to_string()], sort(s));
 }
