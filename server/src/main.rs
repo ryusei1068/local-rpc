@@ -5,9 +5,18 @@ use async_std::task;
 use fake::faker::name::raw::*;
 use fake::locales::*;
 use fake::Fake;
+use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::fs;
 use std::path::Path;
+
+#[derive(Serialize, Deserialize, Debug)]
+struct Request {
+    method: String,
+    params: Vec<i64>,
+    params_types: Vec<String>,
+    id: i64,
+}
 
 fn floor(x: f64) -> f64 {
     x.floor()
