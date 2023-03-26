@@ -4,7 +4,14 @@ const socket_path = "/socket_file";
 
 const client = net.createConnection(socket_path, () => {
         console.log('connected to server!');
-        client.write('world!\r\n');
+        client.write(
+            `{
+                "method": "floor",
+                "params": [3.0],
+                "params_types": ["int"],
+                "id": 1
+            }`
+        );
     });
     client.on('data', (data) => {
         console.log(data.toString());

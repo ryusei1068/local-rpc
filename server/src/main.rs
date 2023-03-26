@@ -13,8 +13,15 @@ use std::path::Path;
 #[derive(Serialize, Deserialize, Debug)]
 struct Request {
     method: String,
-    params: Vec<i64>,
+    params: Vec<f64>,
     params_types: Vec<String>,
+    id: i64,
+}
+
+#[derive(Serialize, Deserialize, Debug)]
+struct Response {
+    result: String,
+    result_type: String,
     id: i64,
 }
 
@@ -64,10 +71,12 @@ async fn run() -> std::io::Result<()> {
         let mut stream = stream?;
         println!("connection from {:?}", stream.local_addr().unwrap());
 
-        let mut message = String::new();
-        stream.read_to_string(&mut message).await?;
+        let mut request = String::new();
+        stream.read_to_string(&mut request).await?;
 
-        println!("We received this message: {}\nReplying...", message);
+        let deserialized: Request = serde_json::from_str(&request).unwrap();
+
+        println!("We received this message: {:?}\nReplying...", deserialized);
 
         let name: String = Name(EN).fake();
         let mut greeting: String = "Hello, ".to_string();
