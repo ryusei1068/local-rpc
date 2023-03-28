@@ -1,10 +1,7 @@
 use async_std::io::{ReadExt, WriteExt};
-use async_std::os::unix::net::UnixListener;
+use async_std::os::unix::net::{UnixListener, UnixStream};
 use async_std::prelude::*;
 use async_std::task;
-use fake::faker::name::raw::*;
-use fake::locales::*;
-use fake::Fake;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::fs;
@@ -55,43 +52,46 @@ fn sort(mut s: Vec<String>) -> Vec<String> {
     s
 }
 
-async fn run() -> std::io::Result<()> {
-    let socket_path = "/socket_file";
+async fn serve(mut stream: UnixStream) -> std::io::Result<()> {
+    let mut request = String::new();
+    stream.read_to_string(&mut request).await?;
 
-    let path = Path::new(&socket_path);
+    let deserialized: Request = serde_json::from_str(&request).unwrap();
 
-    if path.exists() {
-        fs::remove_file(path).expect("File delete failed");
-    }
-
-    let listener = UnixListener::bind(socket_path).await?;
-    let mut incoming = listener.incoming();
-
-    while let Some(stream) = incoming.next().await {
-        let mut stream = stream?;
-        println!("connection from {:?}", stream.local_addr().unwrap());
-
-        let mut request = String::new();
-        stream.read_to_string(&mut request).await?;
-
-        let deserialized: Request = serde_json::from_str(&request).unwrap();
-
-        println!("We received this message: {:?}\nReplying...", deserialized);
-
-        let name: String = Name(EN).fake();
-        let mut greeting: String = "Hello, ".to_string();
-        greeting.push_str(&name);
-        let buf: &[u8] = greeting.as_str().as_bytes();
-
-        stream.write_all(buf).await?;
-    }
+    let serialized = serde_json::to_string(&deserialized).unwrap();
+    let buf: &[u8] = serialized.as_str().as_bytes();
+    stream.write_all(buf).await?;
 
     Ok(())
 }
 
-fn main() {
-    let result = task::block_on(run());
-    println!("{:?}", result);
+fn main() -> std::io::Result<()> {
+    async_std::task::block_on(async {
+        let socket_path = "/socket_file";
+
+        let path = Path::new(&socket_path);
+
+        if path.exists() {
+            fs::remove_file(path).expect("File delete failed");
+        }
+
+        let listener = UnixListener::bind(socket_path).await?;
+        let mut incoming = listener.incoming();
+
+        while let Some(stream) = incoming.next().await {
+            let stream = stream?;
+            task::spawn(async {
+                log_error(serve(stream).await);
+            });
+        }
+        Ok(())
+    })
+}
+
+fn log_error(result: std::io::Result<()>) {
+    if let Err(error) = result {
+        eprintln!("Error: {}", error);
+    }
 }
 
 #[test]
