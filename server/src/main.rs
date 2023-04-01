@@ -10,7 +10,7 @@ use std::path::Path;
 #[derive(Serialize, Deserialize, Debug)]
 struct Request {
     method: String,
-    params: Vec<f64>,
+    params: Vec<String>,
     params_types: Vec<String>,
     id: i64,
 }
@@ -20,6 +20,63 @@ struct Response {
     result: String,
     result_type: String,
     id: i64,
+}
+
+struct Aid {
+    request: Request,
+}
+
+impl Aid {
+    fn new(req: Request) -> Aid {
+        Aid { request: req }
+    }
+
+    fn call_optimum_method(&self) -> Response {
+        let method = &self.request.method;
+        let params = &self.request.params;
+        let identify = self.request.id.clone();
+
+        if *method == "floor".to_string() {
+            return create_response(
+                floor(params[0].parse().unwrap()).to_string(),
+                "f64".to_string(),
+                identify,
+            );
+        } else if *method == "nroot".to_string() {
+            let p1 = params[0].parse().unwrap();
+            let p2 = params[1].parse().unwrap();
+
+            return create_response(nroot(p1, p2).to_string(), "f64".to_string(), identify);
+        } else if *method == "reverse".to_string() {
+            return create_response(
+                reverse(params[0].parse().unwrap()),
+                "String".to_string(),
+                identify,
+            );
+        } else if *method == "validAnagram".to_string() {
+            let p1 = params[0].parse().unwrap();
+            let p2 = params[1].parse().unwrap();
+
+            return create_response(
+                valid_anagram(p1, p2).to_string(),
+                "bool".to_string(),
+                identify,
+            );
+        } else if *method == "sort" {
+            let p_clone = params.clone();
+            return create_response(sort(p_clone).join(" "), "String".to_string(), identify);
+        }
+
+        create_response("error".to_string(), "invalid method".to_string(), identify)
+    }
+}
+
+fn create_response(res: String, res_type: String, identify: i64) -> Response {
+    Response {
+        result: res,
+        result_type: res_type,
+        id: identify,
+    }
 }
 
 fn floor(x: f64) -> f64 {
@@ -58,9 +115,12 @@ async fn serve(mut stream: UnixStream) -> std::io::Result<()> {
 
     let deserialized: Request = serde_json::from_str(&request).unwrap();
 
-    let serialized = serde_json::to_string(&deserialized).unwrap();
+    let aid = Aid::new(deserialized);
+
+    let serialized = serde_json::to_string(&aid.call_optimum_method()).unwrap();
     let buf: &[u8] = serialized.as_str().as_bytes();
-    stream.write_all(buf).await?;
+    stream.write(buf).await?;
+    stream.flush().await?;
 
     Ok(())
 }
