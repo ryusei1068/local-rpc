@@ -8,7 +8,7 @@ const client = net.createConnection(socket_path, () => {
             `{
                 "method": "floor",
                 "params": ["3.12"],
-                "params_types": ["string"],
+                "params_types": ["float"],
                 "id": 1
             }`
         );
