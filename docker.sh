@@ -2,7 +2,7 @@
 
 if [ $# != 1 ]; then
 	echo "Wrong number of arg"
-	echo "./docker-operation.sh run or remove"
+	echo "./docker.sh run"
 	exit 1
 fi
 
