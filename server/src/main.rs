@@ -153,3 +153,21 @@ fn log_error(result: std::io::Result<()>) {
         eprintln!("Error: {}", error);
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use crate::Aid;
+    use crate::Request;
+
+    #[test]
+    fn floor_test() {
+        let reqeust = Request {
+            method: "floor".to_string(),
+            params: vec!["3.12".to_string()],
+            params_types: vec!["float".to_string()],
+            id: 1,
+        };
+        let aid = Aid { request: reqeust };
+        assert_eq!(aid.floor(4.0_f64), 4.0);
+    }
+}
