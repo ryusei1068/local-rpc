@@ -1,4 +1,4 @@
-FROM ryusei1068/rust-build:1.74.0 as build
+FROM ryusei1068/rust-build:1.75.0 as build
 
 # build for sever side 
 RUN USER=root cargo new --bin server
